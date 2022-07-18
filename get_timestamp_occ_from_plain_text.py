@@ -1,9 +1,63 @@
+import os
 import re
 import random
 import datetime
+import googleapiclient
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.dates as mdates
+from googleapiclient.discovery import build
+import pandas as pd
+
+os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+api_service_name = "youtube"
+api_version = "v3"
+DEVELOPER_KEY = ""
+video_id = ""
+youtube = googleapiclient.discovery.build(
+    api_service_name, api_version, developerKey=DEVELOPER_KEY)
+list_all_comments = []
+authors = []
+
+def load_comments(match):
+    for item in match["items"]:
+        comment = item["snippet"]["topLevelComment"]
+        author = comment["snippet"]["authorDisplayName"]
+        text = comment["snippet"]["textOriginal"]
+        list_all_comments.append(text)
+        authors.append(author)
+
+        print("Comment by {}: {}".format(author, text))
+        if 'replies' in item.keys():
+            for reply in item['replies']['comments']:
+                rauthor = reply['snippet']['authorDisplayName']
+                rtext = reply["snippet"]["textOriginal"]
+            print("\n\tReply by {}: {}".format(rauthor, rtext), "\n")
+
+
+def get_comment_threads(youtube, video_id, nextPageToken):
+    results = youtube.commentThreads().list(
+        part="snippet",
+        maxResults=100,
+        videoId=video_id,
+        textFormat="plainText",
+        pageToken=nextPageToken
+    ).execute()
+    return results
+
+
+match = get_comment_threads(youtube, video_id, '')
+next_page_token = match["nextPageToken"]
+load_comments(match)
+
+try:
+    while next_page_token:
+        match = get_comment_threads(youtube, video_id, next_page_token)
+        next_page_token = match["nextPageToken"]
+        load_comments(match)
+except:
+    data = pd.DataFrame(list_all_comments, index=authors, columns=["Comments"])
+    print(data)
 
 
 def randomTime():
@@ -19,9 +73,12 @@ def randomTime():
 def get_time(list_of_comments):
     list_of_times = []
     for text in list_of_comments:
-        x = re.search(r'[0-5]?\d:\d\d', text)
-        str_with_time = x.group()
-        list_of_times.append(str_with_time)
+        x = re.search(r"(?:([0-5]?[0-9]):)?([0-5]?[0-9]):([0-5][0-9])", text)
+        if x is not None:
+            str_with_time = x.group()
+            list_of_times.append(str_with_time)
+        else:
+            pass
     return list_of_times
 
 
@@ -73,11 +130,7 @@ def round_stamps_10(stamps):
     return out
 
 
-# create test-comments
-list_all_comments = []
-for i in range(1000):
-    comment_i = ("Mega Video!!: Ich gebe den 2 eine 10/10, gerade bei Minute " + randomTime())
-    list_all_comments.append(comment_i)
+
 # print(list_all_comments)
 
 
