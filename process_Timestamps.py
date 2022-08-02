@@ -1,9 +1,6 @@
 #from get_timestamp_occ import extracted_time_stamps
 import re
-import datetime
 import matplotlib.pyplot as plt
-import numpy as np
-import matplotlib.dates as mdates
 import pandas as pd
 
 
@@ -49,28 +46,6 @@ def get_time(list_of_comments):
             pass
     return list_of_times
 
-'''def round_stamps_10(stamps):
-    out = []
-    for txt in stamps:
-        split_list = txt.split(":")
-        if len(split_list) != 2:
-            raise ValueError("Has {} spaces, expected 1"
-                             .format(len(split_list) - 1))
-        else:
-            minutes, seconds = split_list
-            seconds = int(seconds) / 10
-            seconds = round(seconds)
-            seconds = seconds * 10
-            if seconds == 60:
-                seconds = "00"
-                minutes = int(minutes) + 1
-            if seconds == 0:
-                seconds = '00'
-            tpl = (str(minutes), str(seconds))
-            rounded = ':'.join(tpl)
-            out.append(rounded)
-        return out
-'''
 
 def round_stamps_10(stamps):
     out = []
@@ -103,42 +78,49 @@ print(extracted_time_stamps)
 round_stamps_10_list = round_stamps_10(extracted_time_stamps)
 print(round_stamps_10_list)
 
-as_times = []
+stamps_with_false_comma = []
 for stamp in round_stamps_10_list:
-    time = datetime.datetime.strptime(stamp, r'%M:%S')
-    # print(time)
-    as_times.append(time)
-#print(as_times)
-as_times = sorted(as_times)
-#print(as_times)
+    sp = stamp.split(":")
+    false_comma = ".".join(sp)
+    stamps_with_false_comma.append(float(false_comma))
 
-# find all x-values
-set_x = set(as_times)  # CHANGE
-x_individual = list(set_x)
-#print(x_individual)
+set_of_stamps = list(set(stamps_with_false_comma))
+set_of_stamps.sort()
 
-# count occuraces for y-axis
-occ_x = []
-for x in set_x:
-    count = as_times.count(x)  # CHANGE
-    occ_x.append(count)
+plot_dict = {}
+for stamp in set_of_stamps:
+    count = stamps_with_false_comma.count(stamp)
+    plot_dict[stamp] = count
 
-# sort
-x_individual = np.array(x_individual)
+keys = []
+values = []
+for key in plot_dict:
+    key_string = str(key)
+    sp = key_string.split(".")
+    new_key = ":".join(sp)
+    new_key = new_key+"0"
+    keys.append(new_key)
+    values.append(plot_dict[key])
+new_dict = dict(zip(keys, values))
+print(new_dict)
 
 # PLOT
-x_values = np.sort(x_individual)
-y_values = np.array(occ_x)
+myList = new_dict.items()
+myList = sorted(myList)
+x_values, y_values = zip(*myList)
+
+
+#x_values =
+#y_values =
 
 fig, ax = plt.subplots()
-ax.plot(x_values, y_values, color='green', marker='o', linestyle='dashed', linewidth=2, markersize=12)
+ax.plot(x_values, y_values, color='blue', marker='o', linestyle='dashed', linewidth=2, markersize=10)
 fig.set_figwidth(10)
 fig.set_figheight(4)
 ax.set_title("Number of Time Stamps per 10-Seconds")
 plt.xlabel('Time in Video')
 plt.ylabel('Number of Time-Stamps')
-ax.xaxis.set_major_formatter(mdates.DateFormatter('%M:%S'))
+#ax.xaxis.set_major_formatter(mdates.DateFormatter('%M:%S'))
 plt.grid()
 
 plt.show()
-
