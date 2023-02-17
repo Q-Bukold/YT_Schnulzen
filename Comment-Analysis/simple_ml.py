@@ -2,9 +2,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
-
-#Wir können die Methode "CountVectorizer" aus scikit-learn verwenden. 
-#Sie überführt die Tokens eines Textdokuents in eine Matrix mit Wortzählungen.
+#-> Code aus Seminar MSV bei Dr. Kliche; Uni Hildesheim 
 
 def get_keywords_from_string(doc, word_range=1, top_n=20, stop_words = "english"):
     n_gram_range = (1, word_range)
